@@ -1,18 +1,39 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import React, { useState, useEffect } from 'react';
+import Input from './components/ui/Input';
+import Card from './components/Card';
+import axios from 'axios';
 
-function App() {
-  const [message, setMessage] = useState('');
-
+const App = () => {
+  const [companies, setCompanies] = useState([]);
+  const [search, setSearch] = useState('');
+  
   useEffect(() => {
-    fetch('/api/hello')
-      .then(res => res.json())
-      .then(data => setMessage(data.message));
+    // Fetch companies from backend API
+    axios.get('http://localhost:5000/api/companies')
+      .then(response => {
+        setCompanies(response.data);
+      })
+      .catch(error => console.error(error));
   }, []);
 
-  return <h1>{message}</h1>;
-}
+  const handleSearchChange = (e) => setSearch(e.target.value);
 
-export default App
+  const filteredCompanies = companies.filter(company =>
+    company.name.toLowerCase().includes(search.toLowerCase())
+  );
+
+  return (
+    <div className="container">
+      <h1>Company Scoring</h1>
+      <Input value={search} onChange={handleSearchChange} placeholder="Search for a company" />
+      
+      <div className="company-list">
+        {filteredCompanies.map(company => (
+          <Card key={company.id} company={company} />
+        ))}
+      </div>
+    </div>
+  );
+};
+
+export default App;

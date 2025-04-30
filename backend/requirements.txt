@@ -1,2 +1,4 @@
-flask
-Flask-CORS
+Flask==2.3.3
+pandas==2.2.2
+scikit-learn==1.4.2
+pyarrow==15.0.2
