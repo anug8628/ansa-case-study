@@ -1,2 +1,12 @@
-buildCommand: npm run build
-publishDir: build
+services:
+  - type: web
+    name: ansa-backend
+    env: python
+    buildCommand: "pip install -r backend/requirements.txt"
+    startCommand: "python backend/main.py"
+    envVars:
+      - key: FLASK_ENV
+        value: production
+    plan: free
+    autoDeploy: true
+    rootDir: backend
