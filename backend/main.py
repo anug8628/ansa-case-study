@@ -2,33 +2,38 @@ from flask import Flask, jsonify
 from model.preprocess import load_data, scale_features
 from model.scorer import compute_similarity, attach_scores
 
-# Define relevant features
-# TODO: find relevant features
-features = [
-    'funding_total',
-    'headcount_growth_6m',
-    'linkedin_follower_count',
-    'gpt_sector' 
-]
+import numpy as np
 
-# Load and process data
 company_data, target_data, company_features, target_features = load_data(
     './data/company_data.parquet',
-    './data/target_company_data.parquet',
-    features
+    './data/target_company_data.parquet'
 )
 
 company_scaled, target_scaled = scale_features(company_features, target_features)
-similarity_matrix = compute_similarity(company_scaled, target_scaled)
-company_data = attach_scores(company_data, similarity_matrix)
+similarity_scores = compute_similarity(company_scaled, target_scaled, top_n_targets=5)
+company_data = attach_scores(company_data, similarity_scores)
 
-print(company_data)
+# Log transform for frontend sorting
+company_data['log_funding_total'] = np.log1p(company_data['funding_total'].fillna(0))
+company_data['log_headcount'] = np.log1p(company_data['headcount'].fillna(0))
+
+print(company_data[['company_id', 'name', 'similarity_score']].sort_values(by='similarity_score', ascending=False).head(10))
 
 app = Flask(__name__)
 
 @app.route('/api/companies', methods=['GET'])
 def get_companies():
-    scored = company_data[['company_id', 'company_name', 'similarity_score']].sort_values(by='similarity_score', ascending=False)
+    included_columns = [
+        'company_id', 'name', 'similarity_score',
+        'funding_total', 'headcount',
+        'log_funding_total', 'log_headcount',
+        'gpt_sector'
+    ]
+    # Include all sector_ columns dynamically
+    sector_cols = [col for col in company_data.columns if col.startswith('sector_')]
+    all_cols = included_columns + sector_cols
+
+    scored = company_data[all_cols].sort_values(by='similarity_score', ascending=False)
     return jsonify(scored.to_dict(orient='records'))
 
 @app.route('/api/company/<int:company_id>', methods=['GET'])

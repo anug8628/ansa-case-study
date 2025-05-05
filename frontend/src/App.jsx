@@ -1,39 +1,36 @@
-import React, { useState, useEffect } from 'react';
-import Input from './components/ui/Input';
-import Card from './components/Card';
+import { useEffect, useState } from 'react';
 import axios from 'axios';
+import './App.css';
+import './index.css';
+import { LoadingScreen } from './components/LoadingScreen';
+import { Navbar } from './components/NavBar';
+import CompanyTable from './components/CompanyTable';
 
-const App = () => {
+function App() {
+  const [isLoaded, setIsLoaded] = useState(false);
   const [companies, setCompanies] = useState([]);
-  const [search, setSearch] = useState('');
-  
+
   useEffect(() => {
-    // Fetch companies from backend API
-    axios.get('http://localhost:5000/api/companies')
-      .then(response => {
-        setCompanies(response.data);
-      })
-      .catch(error => console.error(error));
+    axios.get('/api/companies')
+      .then(res => setCompanies(Array.isArray(res.data) ? res.data : []))
+      .catch(err => {
+        console.error('Failed to fetch companies:', err);
+        setCompanies([]);
+      });
   }, []);
 
-  const handleSearchChange = (e) => setSearch(e.target.value);
-
-  const filteredCompanies = companies.filter(company =>
-    company.name.toLowerCase().includes(search.toLowerCase())
-  );
-
   return (
-    <div className="container">
-      <h1>Company Scoring</h1>
-      <Input value={search} onChange={handleSearchChange} placeholder="Search for a company" />
-      
-      <div className="company-list">
-        {filteredCompanies.map(company => (
-          <Card key={company.id} company={company} />
-        ))}
+    <>
+      {!isLoaded && <LoadingScreen onComplete={() => setIsLoaded(true)} />}
+
+      <div className={`min-h-screen transition-opacity duration-700 ${isLoaded ? "opacity-100" : "opacity-0"} bg-gray-50 text-gray-800 pt-16`}>
+        <Navbar />
+        <main className="p-6 max-w-7xl mx-auto">
+          <CompanyTable companies={companies} />
+        </main>
       </div>
-    </div>
+    </>
   );
-};
+}
 
 export default App;
