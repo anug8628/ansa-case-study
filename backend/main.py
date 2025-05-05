@@ -1,5 +1,6 @@
 import os
 from flask import Flask, jsonify
+from flask_cors import CORS
 from model.preprocess import load_data, scale_features
 from model.scorer import compute_similarity, attach_scores
 
@@ -22,6 +23,7 @@ company_data['log_headcount'] = np.log1p(company_data['headcount'].fillna(0))
 print(company_data[['company_id', 'name', 'similarity_score']].sort_values(by='similarity_score', ascending=False).head(10))
 
 app = Flask(__name__)
+CORS(app)
 
 @app.route('/api/companies', methods=['GET'])
 def get_companies():
