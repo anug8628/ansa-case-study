@@ -1,3 +1,4 @@
+import os
 from flask import Flask, jsonify
 from model.preprocess import load_data, scale_features
 from model.scorer import compute_similarity, attach_scores
@@ -53,4 +54,5 @@ def get_company(company_id):
     return jsonify({'error': 'Company not found'}), 404
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)

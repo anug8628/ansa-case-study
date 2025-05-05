@@ -11,7 +11,9 @@ function App() {
   const [companies, setCompanies] = useState([]);
 
   useEffect(() => {
-    axios.get('/api/companies')
+    const apiBaseUrl = import.meta.env.VITE_API_URL || '';
+    
+    axios.get(`${apiBaseUrl}/api/companies`)
       .then(res => {
         console.log("Received data:", res.data);
         setCompanies(Array.isArray(res.data) ? res.data : []);
