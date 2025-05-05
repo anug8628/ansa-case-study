@@ -8,7 +8,7 @@ export const Navbar = () => {
           <a href="#home" className="flex items-center space-x-2">
             <img src={ansaLogo} alt="Ansa Logo" className="h-8 w-auto" />
             <span className="font-mono text-xl font-bold text-white">
-              <span className="text-white-500"> company scoring</span>
+              <span className="text-white-500">company scoring</span>
             </span>
           </a>
 

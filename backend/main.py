@@ -10,8 +10,9 @@ company_data, target_data, company_features, target_features = load_data(
 )
 
 company_scaled, target_scaled = scale_features(company_features, target_features)
-similarity_scores = compute_similarity(company_scaled, target_scaled, top_n_targets=5)
-company_data = attach_scores(company_data, similarity_scores)
+similarity_scores, best_match_indices = compute_similarity(company_scaled, target_scaled, top_n_targets=5)
+company_data = attach_scores(company_data, similarity_scores, best_match_indices, target_data)
+
 
 # Log transform for frontend sorting
 company_data['log_funding_total'] = np.log1p(company_data['funding_total'].fillna(0))
@@ -24,17 +25,16 @@ app = Flask(__name__)
 @app.route('/api/companies', methods=['GET'])
 def get_companies():
     included_columns = [
-    'company_id', 'name', 'similarity_score',
-    'funding_total', 'headcount',
-    'log_funding_total', 'log_headcount',
-    'gpt_sector','last_funding_type', 
-    'funding_stage','domain_only', 'description',
-    'last_funding_date', 'years_since_founding'
+        'company_id', 'name', 'similarity_score', 'most_similar_company', 
+        'funding_total', 'headcount',
+        'log_funding_total', 'log_headcount',
+        'gpt_sector','last_funding_type', 
+        'funding_stage','domain_only', 'description',
+        'last_funding_date', 'years_since_founding'
     ]
     # Include all sector_ columns dynamically
     sector_cols = [col for col in company_data.columns if col.startswith('sector_')]
     all_cols = included_columns + sector_cols
-
 
     scored = company_data[all_cols].sort_values(by='similarity_score', ascending=False)
 

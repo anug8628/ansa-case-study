@@ -13,6 +13,7 @@ interface SortOption {
 }
 
 const CompanyTable: React.FC<CompanyTableProps> = ({ companies }) => {
+  // State hooks for search, selected sector, and selected company
   const [search, setSearch] = useState('');
   const [domainSearch, setDomainSearch] = useState('');
   const [selectedSector, setSelectedSector] = useState('All');
@@ -20,15 +21,18 @@ const CompanyTable: React.FC<CompanyTableProps> = ({ companies }) => {
   const [selectedColumns, setSelectedColumns] = useState<string[]>([
     'name',
     'similarity_score',
+    'most_similar_company',
     'funding_total',
     'headcount',
     'domain_only'
   ]);
 
+  // Sort options state to manage column sorting
   const [sortOptions, setSortOptions] = useState<SortOption[]>([
     { column: 'similarity_score', direction: 'desc' }
   ]);
 
+  // List of all columns that can be exported to CSV
   const allExportableColumns = [
     'company_id', 'name', 'similarity_score',
     'funding_total', 'headcount',
@@ -36,9 +40,11 @@ const CompanyTable: React.FC<CompanyTableProps> = ({ companies }) => {
     'gpt_sector',
     'last_funding_type', 'last_funding_total', 'funding_stage',
     'domain_only', 'description',
-    'last_funding_date', 'years_since_founding'
+    'last_funding_date', 'years_since_founding',
+    'most_similar_company'
   ];
 
+  // Generate unique sectors from the company data dynamically
   const uniqueSectors = useMemo(() => {
     const sectors = new Set<string>();
     companies.forEach(c => {
@@ -49,21 +55,21 @@ const CompanyTable: React.FC<CompanyTableProps> = ({ companies }) => {
     return ['All', ...Array.from(sectors)];
   }, [companies]);
 
-  // Debounced search functionality
+  // Debounced search states to avoid excessive re-renders
   const [debouncedSearch, setDebouncedSearch] = useState(search);
   const [debouncedDomainSearch, setDebouncedDomainSearch] = useState(domainSearch);
   
   useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearch(search), 500);
-    return () => clearTimeout(timer); // Cleanup timer on each search change
+    const timer = setTimeout(() => setDebouncedSearch(search), 500);  // Delay to wait for user input
+    return () => clearTimeout(timer); 
   }, [search]);
 
   useEffect(() => {
-    const timer = setTimeout(() => setDebouncedDomainSearch(domainSearch), 500);
-    return () => clearTimeout(timer); // Cleanup timer on each domain search change
+    const timer = setTimeout(() => setDebouncedDomainSearch(domainSearch), 500);  // Same for domain search
+    return () => clearTimeout(timer); 
   }, [domainSearch]);
 
-  // Filtered companies based on search and selected sector
+  // Filter companies based on search, selected sector, and domain
   const filteredCompanies = useMemo(() => {
     const filtered = companies
       .filter(c => c.name?.toLowerCase().includes(debouncedSearch.toLowerCase()))
@@ -73,7 +79,7 @@ const CompanyTable: React.FC<CompanyTableProps> = ({ companies }) => {
     return filtered;
   }, [companies, debouncedSearch, selectedSector, debouncedDomainSearch]);
 
-  // Memoized sorting operation to improve performance
+  // Sort filtered companies based on the selected sort options
   const sortedCompanies = useMemo(() => {
     return [...filteredCompanies].sort((a, b) => {
       for (const { column, direction } of sortOptions) {
@@ -86,14 +92,17 @@ const CompanyTable: React.FC<CompanyTableProps> = ({ companies }) => {
     });
   }, [filteredCompanies, sortOptions]);
 
+  // Handle row click to open company details in a modal
   const handleRowClick = (company: any) => {
     setSelectedCompany(company);
   };
 
+  // Close the company details modal
   const handleCloseModal = () => {
     setSelectedCompany(null);
   };
 
+  // Export filtered data or all data as CSV
   const handleExport = (dataToExport: any[]) => {
     const csvHeader = selectedColumns.join(',');
     const csvRows = dataToExport.map(row =>
@@ -110,6 +119,7 @@ const CompanyTable: React.FC<CompanyTableProps> = ({ companies }) => {
     URL.revokeObjectURL(url);
   };
 
+  // Toggle column visibility for CSV export
   const toggleColumn = (column: string) => {
     setSelectedColumns(prev =>
       prev.includes(column)
@@ -118,6 +128,7 @@ const CompanyTable: React.FC<CompanyTableProps> = ({ companies }) => {
     );
   };
 
+  // Handle column sorting (ascending or descending)
   const handleSort = (column: string) => {
     setSortOptions(prev => {
       const existing = prev.find(s => s.column === column);
@@ -128,17 +139,18 @@ const CompanyTable: React.FC<CompanyTableProps> = ({ companies }) => {
             ? { column, direction: s.direction === 'asc' ? 'desc' : 'asc' }
             : s
         );
-        // Move this column to the front
+
         const sorted = updated.sort((a, b) =>
           a.column === column ? -1 : b.column === column ? 1 : 0
         );
-        return sorted as SortOption[];  // Make sure TypeScript understands it's a SortOption array
+        return sorted as SortOption[];
       } else {
-        return [{ column, direction: 'desc' as SortDirection }, ...prev];  // Explicitly cast 'desc' to SortDirection
+        return [{ column, direction: 'desc' as SortDirection }, ...prev];
       }
     });
   };
 
+  // Get sort indicator (arrow) based on column sorting direction
   const getSortIndicator = (column: string) => {
     const entry = sortOptions.find(s => s.column === column);
     if (!entry) return '';
@@ -147,6 +159,7 @@ const CompanyTable: React.FC<CompanyTableProps> = ({ companies }) => {
 
   return (
     <div>
+      {/* Search, filtering, and column selection UI */}
       <div className="flex gap-4 mb-4 flex-wrap">
         <input
           type="text"
@@ -174,6 +187,7 @@ const CompanyTable: React.FC<CompanyTableProps> = ({ companies }) => {
           ))}
         </select>
 
+        {/* Checkboxes for column selection */}
         <div className="flex items-center gap-2 flex-wrap">
           {allExportableColumns.map(col => (
             <label key={col} className="text-sm">
@@ -188,6 +202,7 @@ const CompanyTable: React.FC<CompanyTableProps> = ({ companies }) => {
           ))}
         </div>
 
+        {/* Buttons for exporting filtered or all data */}
         <button
           onClick={() => handleExport(sortedCompanies)}
           className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
@@ -202,6 +217,7 @@ const CompanyTable: React.FC<CompanyTableProps> = ({ companies }) => {
         </button>
       </div>
 
+      {/* Table displaying the sorted and filtered company data */}
       <div className="overflow-auto">
         <table className="min-w-full bg-white rounded shadow">
           <thead className="bg-gray-100 text-left">
@@ -214,6 +230,9 @@ const CompanyTable: React.FC<CompanyTableProps> = ({ companies }) => {
               </th>
               <th className="px-4 py-2 cursor-pointer" onClick={() => handleSort('similarity_score')}>
                 Score {getSortIndicator('similarity_score')}
+              </th>
+              <th className="px-4 py-2 cursor-pointer" onClick={() => handleSort('most_similar_company')}>
+                Most Similar Company {getSortIndicator('most_similar_company')}
               </th>
               <th className="px-4 py-2 cursor-pointer" onClick={() => handleSort('funding_total')}>
                 Funding (Million) {getSortIndicator('funding_total')}
@@ -233,6 +252,7 @@ const CompanyTable: React.FC<CompanyTableProps> = ({ companies }) => {
                 <td className="px-4 py-2">{company.name}</td>
                 <td className="px-4 py-2">{company.domain_only}</td>
                 <td className="px-4 py-2">{company.similarity_score?.toFixed(3)}</td>
+                <td className="px-4 py-2">{company.most_similar_company}</td>
                 <td className="px-4 py-2">{company.funding_total?.toFixed(5)}</td>
                 <td className="px-4 py-2">{company.headcount?.toFixed(0)}</td>
               </tr>
@@ -241,6 +261,7 @@ const CompanyTable: React.FC<CompanyTableProps> = ({ companies }) => {
         </table>
       </div>
 
+      {/* Show modal with company details */}
       {selectedCompany && (
         <CompanyDetailModal
           company={selectedCompany}
