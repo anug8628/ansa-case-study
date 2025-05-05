@@ -12,12 +12,21 @@ function App() {
 
   useEffect(() => {
     axios.get('/api/companies')
-      .then(res => setCompanies(Array.isArray(res.data) ? res.data : []))
+      .then(res => {
+        console.log("Received data:", res.data);
+        setCompanies(Array.isArray(res.data) ? res.data : []);
+      })
       .catch(err => {
         console.error('Failed to fetch companies:', err);
         setCompanies([]);
       });
   }, []);
+  
+  useEffect(() => {
+    console.log("Updated companies state:", companies);
+  }, [companies]);
+  
+
 
   return (
     <>

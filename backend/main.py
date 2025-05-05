@@ -24,17 +24,26 @@ app = Flask(__name__)
 @app.route('/api/companies', methods=['GET'])
 def get_companies():
     included_columns = [
-        'company_id', 'name', 'similarity_score',
-        'funding_total', 'headcount',
-        'log_funding_total', 'log_headcount',
-        'gpt_sector'
+    'company_id', 'name', 'similarity_score',
+    'funding_total', 'headcount',
+    'log_funding_total', 'log_headcount',
+    'gpt_sector','last_funding_type', 
+    'funding_stage','domain_only', 'description',
+    'last_funding_date', 'years_since_founding'
     ]
     # Include all sector_ columns dynamically
     sector_cols = [col for col in company_data.columns if col.startswith('sector_')]
     all_cols = included_columns + sector_cols
 
+
     scored = company_data[all_cols].sort_values(by='similarity_score', ascending=False)
+
+    if 'last_funding_date' in scored.columns:
+        scored['last_funding_date'] = scored['last_funding_date'].dt.strftime('%Y-%m-%d')
+        scored['last_funding_date'] = scored['last_funding_date'].fillna('N/A')
+        
     return jsonify(scored.to_dict(orient='records'))
+
 
 @app.route('/api/company/<int:company_id>', methods=['GET'])
 def get_company(company_id):
